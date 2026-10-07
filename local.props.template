@@ -1,0 +1,12 @@
+<Project>
+    <!--
+      本机专属路径模板。复制为 local.props 再按本机情况修改（local.props 不入 git）。
+    -->
+    <PropertyGroup>
+        <!-- 杀戮尖塔 2 安装目录（留空则用 Sts2PathDiscovery.props 自动探测） -->
+        <Sts2Path></Sts2Path>
+
+        <!-- Godot 4.5.1 mono 可执行文件（默认构建走 PckPacker，不需要它） -->
+        <GodotPath></GodotPath>
+    </PropertyGroup>
+</Project>

@@ -1,0 +1,108 @@
+<Project Sdk="Godot.NET.Sdk/4.5.1" InitialTargets="CheckDependencyPaths">
+    <Import Project=".\Sts2PathDiscovery.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>true</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <DefaultItemExcludes>$(DefaultItemExcludes);packages/**</DefaultItemExcludes>
+        <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
+        <PathMap>$(AppOutputBase)=.\</PathMap>
+        <GodotDisabledSourceGenerators>GodotPluginsInitializer</GodotDisabledSourceGenerators>
+        <LangVersion>default</LangVersion>
+
+        <!-- 版本号：与 CYLib.json 的 version 保持一致 -->
+        <Version>0.1.4</Version>
+        <AssemblyVersion>0.1.4.0</AssemblyVersion>
+        <FileVersion>0.1.4.0</FileVersion>
+        <Authors>CaiYing</Authors>
+        <Product>CYLib</Product>
+
+        <!--
+          ★ 资源目录名是"承重"的，不能随便起。
+          游戏通过 ModManager.GetModdedLocTables 找模组文本，路径是写死的字符串拼接：
+              "res://" + <模组清单里的 id> + "/localization/" + <语言> + "/" + <表名>.json
+          所以这个目录名必须等于模组 id（CYLib），否则界面会直接显示原始 key。
+        -->
+        <ResourcesDir>CYLib</ResourcesDir>
+        <PckPackerSourceDir>$(ResourcesDir)/</PckPackerSourceDir>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- 模组按 MSIL 构建以兼容所有平台，而本机游戏是平台特定的，故忽略架构不匹配警告 -->
+        <NoWarn>$(NoWarn);MSB3270</NoWarn>
+    </PropertyGroup>
+
+    <!-- 游戏程序集。0Harmony 随游戏分发，不需要 NuGet 引用。 -->
+    <ItemGroup Condition="Exists('$(Sts2DataDir)')">
+        <Reference Include="0Harmony">
+            <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="sts2">
+            <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+          版本一律写死，不用 "*"：避免上游发新版悄悄改掉构建。
+          这些包已随工程放在 packages\ 下，可用 nuget.config 离线还原。
+          CYLib 是平台模组，不依赖 BaseLib。
+        -->
+        <PackageReference Include="BSchneppe.StS2.PckPacker" Version="0.1.1" PrivateAssets="All" />
+
+        <!-- 让补丁能访问游戏的 private/protected 成员 -->
+        <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="All" />
+
+        <!-- 让本地化分析器能理解我们的 loc key -->
+        <AdditionalFiles Include="$(ResourcesDir)/localization/**/*.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Publicize Include="sts2" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
+    </ItemGroup>
+
+    <!-- 非代码资源不进编译器输入 -->
+    <ItemGroup>
+        <Compile Remove="$(ResourcesDir)/**" />
+        <Compile Remove="docs/**" />
+        <Compile Remove="tools/**" />
+        <Compile Remove="packages/**" />
+        <Compile Remove="dist/**" />
+        <EmbeddedResource Remove="$(ResourcesDir)/**" />
+        <EmbeddedResource Remove="docs/**" />
+        <EmbeddedResource Remove="tools/**" />
+        <EmbeddedResource Remove="packages/**" />
+        <EmbeddedResource Remove="dist/**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Condition="Exists('Directory.Build.props')" Include="Directory.Build.props" />
+        <None Include=".gitignore" />
+        <None Include="$(MSBuildProjectName).json" />
+        <None Include="project.godot" />
+        <None Include="export_presets.cfg" />
+        <None Include="$(ResourcesDir)/**" />
+    </ItemGroup>
+
+    <Target Name="CheckDependencyPaths">
+        <Error Text="找不到杀戮尖塔 2 的数据目录 '$(Sts2DataDir)'。请安装游戏，或在 local.props 里显式设置 &lt;Sts2Path&gt;。"
+               Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')" />
+    </Target>
+
+    <!--
+      构建产物直接进 mods/CYLib/。
+      ★ 必须排在 PckPacker 的 PackPck 之后：它在 Build 后才生成 .pck，
+        若在 PostBuildEvent 就复制，会把上一次的旧 .pck 拷进 mods（静默的"改了文案不生效"）。
+    -->
+    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PackPck">
+        <Message Text="复制 CYLib.dll/.json/.pdb/.pck 到 '$(ModsPath)$(MSBuildProjectName)/'" Importance="high" />
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
+        <Copy SourceFiles="$(AssemblyName).json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
+        <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+        <Copy SourceFiles="$(TargetDir)$(TargetName).pck" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" Condition="Exists('$(TargetDir)$(TargetName).pck')" />
+    </Target>
+</Project>

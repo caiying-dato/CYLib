@@ -1,0 +1,15 @@
+; Engine configuration file.
+; Generated for the CYLib Slay the Spire 2 mod.
+; The exported .pck becomes `CYLib.pck` next to the mod dll and carries
+; localization at res://CYLib/localization/<lang>/<table>.json
+
+config_version=5
+
+[application]
+
+config/name="CYLib"
+config/features=PackedStringArray("4.5")
+
+[rendering]
+
+renderer/rendering_method="mobile"

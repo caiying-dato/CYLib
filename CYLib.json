@@ -1,0 +1,12 @@
+{
+  "id": "CYLib",
+  "name": "CYLib",
+  "author": "CaiYing",
+  "description": "CY 系列模组的配置平台：在主界面提供「模组配置」入口，各模组通过 CYLib API 注册自己的配置项，由 CYLib 统一渲染、存储与管理。",
+  "version": "v0.1.4",
+  "has_pck": true,
+  "has_dll": true,
+  "min_game_version": "0.111.0",
+  "dependencies": [],
+  "affects_gameplay": false
+}
